@@ -8,6 +8,7 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,12 +27,12 @@ jobs:
 
       - name: Run Hello World Deployment Step
         run: |
-          echo "Hello World - Simulating deployment on main"
+          echo "Hello World - Simulating deployment on ${{ job.environment.name }}"
           echo "From PR #${{ steps.get_pr.outputs.pr_number }}"
 
       - name: Send notification to Google Chat
         run: |
-          message="Deployment completed on main from the PR #${{ steps.get_pr.outputs.pr_number }}"
+          message="Deployment completed on ${{ job.environment.name }} from the PR #${{ steps.get_pr.outputs.pr_number }}"
           curl -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK }}" \
             -H "Content-Type: application/json" \
             -d "{\"text\": \"${message}\"}"
