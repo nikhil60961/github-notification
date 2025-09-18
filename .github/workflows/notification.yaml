@@ -1,16 +1,9 @@
 name: Notify Google Chat on Deployment
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Deployment Environment"
-        required: true
-        type: string
-      pr_id:
-        description: "Pull Request ID"
-        required: true
-        type: string
+  push:
+    branches:
+      - main
 
 jobs:
   notify:
@@ -21,12 +14,12 @@ jobs:
 
       - name: Run Hello World Deployment Step
         run: |
-          echo "Hello World - Simulating deployment to ${{ inputs.environment }}"
-          echo "From PR #${{ inputs.pr_id }}"
+          echo "Hello World - Simulating deployment to main branch"
+          echo "Commit: ${{ github.sha }}"
       
       - name: Send notification to Google Chat
         run: |
-          message="Deployment completed to *${{ inputs.environment }}* from PR #${{ inputs.pr_id }}"
+          message="Deployment completed to *main* from commit ${{ github.sha }}"
           curl -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK }}" \
             -H "Content-Type: application/json" \
             -d "{\"text\": \"${message}\"}"
