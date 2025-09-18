@@ -16,6 +16,14 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Hello World Deployment Step
+        run: |
+          echo "Hello World - Simulating deployment to ${{ inputs.environment }}"
+          echo "From PR #${{ inputs.pr_id }}"
+      
       - name: Send notification to Google Chat
         run: |
           message="Deployment completed to *${{ inputs.environment }}* from PR #${{ inputs.pr_id }}"
