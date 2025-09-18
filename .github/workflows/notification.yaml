@@ -3,17 +3,33 @@ name: Notify Google Chat on Deployment
 on:
   push:
     branches:
-      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment Environment"
+        required: true
+        type: string
+      pr_id:
+        description: "Pull Request ID"
+        required: true
+        type: string
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    environment: dev
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Get PR Number
+      # 🔹 Case 1: Push to develop → set environment = dev and fetch PR
+      - name: Set environment for develop
+        if: github.ref == 'refs/heads/develop'
+        run: echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+
+      - name: Get PR Number for develop
+        if: github.ref == 'refs/heads/develop'
         id: get_pr
         run: |
           PR_NUMBER=$(gh pr list --state merged --search "${{ github.sha }}" --json number --jq '.[0].number')
@@ -25,14 +41,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🔹 Case 2: Tag deployment (workflow_dispatch)
+      - name: Set environment for dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "ENVIRONMENT=${{ inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Set PR number for dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "PR_NUMBER=${{ inputs.pr_id }}" >> $GITHUB_ENV
+
+      # 🔹 Deployment step (Hello World simulation)
       - name: Run Hello World Deployment Step
         run: |
-          echo "Hello World - Simulating deployment on ${{ job.environment.name }}"
-          echo "From PR #${{ steps.get_pr.outputs.pr_number }}"
+          echo "Hello World - Simulating deployment on $ENVIRONMENT"
+          echo "From PR #${PR_NUMBER:-${{ steps.get_pr.outputs.pr_number }}}"
 
+      # 🔹 Send notification to Google Chat
       - name: Send notification to Google Chat
         run: |
-          message="Deployment completed on ${{ job.environment.name }} from the PR #${{ steps.get_pr.outputs.pr_number }}"
+          PR_NUM=${PR_NUMBER:-${{ steps.get_pr.outputs.pr_number }}}
+          message="Deployment completed on $ENVIRONMENT from the PR #$PR_NUM"
           curl -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK }}" \
             -H "Content-Type: application/json" \
             -d "{\"text\": \"${message}\"}"
