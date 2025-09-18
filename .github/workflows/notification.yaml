@@ -12,14 +12,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Get PR Number
+        id: get_pr
+        run: |
+          PR_NUMBER=$(gh pr list --state merged --search "${{ github.sha }}" --json number --jq '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR found for this commit"
+            PR_NUMBER="N/A"
+          fi
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Hello World Deployment Step
         run: |
-          echo "Hello World - Simulating deployment to main branch"
-          echo "Commit: ${{ github.sha }}"
-      
+          echo "Hello World - Simulating deployment on main"
+          echo "From PR #${{ steps.get_pr.outputs.pr_number }}"
+
       - name: Send notification to Google Chat
         run: |
-          message="Deployment completed to *main* from commit ${{ github.sha }}"
+          message="Deployment completed on main from the PR #${{ steps.get_pr.outputs.pr_number }}"
           curl -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK }}" \
             -H "Content-Type: application/json" \
             -d "{\"text\": \"${message}\"}"
