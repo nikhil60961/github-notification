@@ -1,0 +1,24 @@
+name: Notify Google Chat on Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment Environment"
+        required: true
+        type: string
+      pr_id:
+        description: "Pull Request ID"
+        required: true
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to Google Chat
+        run: |
+          message="Deployment completed to *${{ inputs.environment }}* from PR #${{ inputs.pr_id }}"
+          curl -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"${message}\"}"
